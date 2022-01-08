@@ -35,7 +35,7 @@ async function start() {
 
     let timeframe = await new Promise((resolve, reject) => {
         rl.question("Choose the timeframe of the top posts [hour, day, week, month, year, all]\n", ans => {
-            rl.pause()
+            rl.close()
             resolve(ans)
         })
     })
@@ -102,12 +102,16 @@ async function start() {
 // Limpa o conteúdo das pastas utilizadas
 async function cleanFolders() {
 
-   
+    const rl3 = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    })
+    
 
     const answer = await new Promise((resolve, reject) => {
-        rl.resume()
-        rl.question("Do you want to delete all videos downloaded? (Y/N)\n", ans => {
-            rl.close()
+        rl3.resume()
+        rl3.question("Do you want to delete all videos downloaded? (Y/N)\n", ans => {
+            rl3.close()
             resolve(ans)
         })
     })
