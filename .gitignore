@@ -1,3 +1,8 @@
 node_modules
 .env
-dadosYoutube.json
+google-youtube.json
+audio
+videos
+videoAndAudio
+videosWithText
+16by9videos

@@ -1,15 +1,13 @@
 
-
-var downloader = require('./bots/downloadContentBot.js')
-var videoMaker = require('./bots/videoMakerBot.js')
-var videoUploader = require('./bots/videoUploaderBot.js')
+const envFound = require('dotenv').config();
+var downloader = require('./downloadContentBot.js')
+var videoMaker = require('./videoMakerBot.js')
+var videoUploader = require('./videoUploaderBot.js')
 var dotenv = require('dotenv')
 var readline = require('readline')
 var exec = require('child_process').exec
 const { exit } = require('process')
 
-const envFound = dotenv.config(); //Loads .env file content into | process.env
-const outro = process.env.OUTROFOLDER
 const videosWithAudioFolder = process.env.VIDEOSWITHAUDIOFOLDER
 const videosWithTextFolder = process.env.VIDEOSWITHTEXTFOLDER
 const rightResolutionFolder = process.env.RIGHTRESOLUTIONFOLDER
@@ -37,6 +35,7 @@ async function start() {
 
     let timeframe = await new Promise((resolve, reject) => {
         rl.question("Choose the timeframe of the top posts [hour, day, week, month, year, all]\n", ans => {
+            rl.pause()
             resolve(ans)
         })
     })
@@ -103,7 +102,10 @@ async function start() {
 // Limpa o conteúdo das pastas utilizadas
 async function cleanFolders() {
 
+   
+
     const answer = await new Promise((resolve, reject) => {
+        rl.resume()
         rl.question("Do you want to delete all videos downloaded? (Y/N)\n", ans => {
             rl.close()
             resolve(ans)
@@ -124,7 +126,7 @@ async function deleteFiles() {
 
     return new Promise((resolve, reject) => {
 
-        exec('del /s /q audio\\ && del /s /q videos\\ && del /s /q videoAndAudio\\ && del /s /q videosWithText\\  && del /s /q tempResolution\\ && del /s /q 16by9videos\\ && break>listaDeVideos.txt', async function (err, stdout, stderr) {
+        exec('del /s /q ..\\audio\\ && del /s /q ..\\videos\\ && del /s /q ..\\videoAndAudio\\ && del /s /q ..\\videosWithText\\  && del /s /q ..\\tempResolution\\ && del /s /q ..\\16by9videos\\ && break>..\\listaDeVideos.txt', async function (err, stdout, stderr) {
             if (err) {
                 console.log(err)
                 reject()

@@ -5,13 +5,13 @@ var fs = require('fs')
 var joinVideoAndAudio = async function (post, pastaVideosComAudio, withAudioName) {
     return new Promise(async function (resolve) {
         try {
-            exec('ffmpeg -i videos/' + post.videoName + ' -i audio/' + post.audioName + ' -c copy ' + pastaVideosComAudio + withAudioName, (err, stdout, stderr) => {
+            exec('ffmpeg -i ../videos/' + post.videoName + ' -i ../audio/' + post.audioName + ' -c copy ' + pastaVideosComAudio + withAudioName, (err, stdout, stderr) => {
                 if (err) {
                     console.log("> [video-maker] Error joining audio and video for " + post.videoName)
                         // "\n> Output of the Error:\n" + err)
 
                     console.log("> [video-maker] Trying to move video without the audio")
-                    exec('copy videos\\' + post.videoName + ' ' + "videoAndAudio\\" + withAudioName, (err, stdout, stderr) => {
+                    exec('copy ..\\videos\\' + post.videoName + ' ' + "..\\videoAndAudio\\" + withAudioName, (err, stdout, stderr) => {
                         if (err) {
                             console.log("> [video-maker] Error moving video without audio")
                         } else {
@@ -68,7 +68,7 @@ var checkResolution = async function (videoName, pastaVideosComAudio, pastaVideo
 async function fixResolution(videoName, pastaVideosComAudio, pastaVideosResolucaoCerta) {
     return new Promise((resolve) => {
         try {
-            exec('ffmpeg -i ' + pastaVideosComAudio + videoName + ' -lavfi "[0:v]scale=1920*2:1080*2,boxblur=luma_radius=min(h\\,w)/20:luma_power=1:chroma_radius=min(cw\\,ch)/20:chroma_power=1[bg];[0:v]scale=-1:1080[ov];[bg][ov]overlay=(W-w)/2:(H-h)/2,crop=w=1920:h=1080" tempResolution/' + videoName + ' && ffmpeg -i tempResolution/' + videoName + ' -vf "scale=1920:1080,setsar=1" ' + pastaVideosResolucaoCerta + videoName, (err, stdout, stderr) => {
+            exec('ffmpeg -i ' + pastaVideosComAudio + videoName + ' -lavfi "[0:v]scale=1920*2:1080*2,boxblur=luma_radius=min(h\\,w)/20:luma_power=1:chroma_radius=min(cw\\,ch)/20:chroma_power=1[bg];[0:v]scale=-1:1080[ov];[bg][ov]overlay=(W-w)/2:(H-h)/2,crop=w=1920:h=1080" ../tempResolution/' + videoName + ' && ffmpeg -i ../tempResolution/' + videoName + ' -vf "scale=1920:1080,setsar=1" ' + pastaVideosResolucaoCerta + videoName, (err, stdout, stderr) => {
                 if (err) {
                     console.log("> [video-maker] Error fixing the resolution of " + videoName)
                     resolve()
@@ -114,16 +114,16 @@ var addTextToVideo = async function (post, video, pasta, pastaVideosResolucaoCer
 }
 
 //  Guarda num ficheiro .txt a localização e nomes dos ficheiros dos clipes a serem utilizados para o vídeo final
-var makeListFile = async function (pastaVideosResolucaoCerta) {
+var makeListFile = async function (videosWithTextFolder) {
     var data = '';
     await new Promise((resolve) => {
         try {
             console.log("> [video-maker] Creating file list.")
-            fs.readdir(pastaVideosResolucaoCerta.split("/")[0], (err, files) => {
+            fs.readdir(videosWithTextFolder, (err, files) => {
                 files.forEach(file => {
-                    data += 'file ' + pastaVideosResolucaoCerta + file + "\n";
+                    data += 'file ' + videosWithTextFolder.split("/")[1] + "/" + file + "\n";
                 })
-                fs.writeFile("listaDeVideos.txt", data, function (err) {
+                fs.writeFile("../listaDeVideos.txt", data, function (err) {
                     if (err) return console.log(err);
                 })
                 resolve()
@@ -142,7 +142,7 @@ var makeListFile = async function (pastaVideosResolucaoCerta) {
 */
 var videoMaker = async function (videoName, pastaVideoFinal) {
     return new Promise((resolve, reject) => {
-        exec('ffmpeg -safe 0 -f concat -i listaDeVideos.txt -c copy ' + pastaVideoFinal + videoName, async function (err, stdout, stderr) {
+        exec('ffmpeg -safe 0 -f concat -i ../listaDeVideos.txt -c copy ' + pastaVideoFinal + videoName, async function (err, stdout, stderr) {
             if (err) {
                 console.log("> [video-maker] Error creating final video "
                     + ".\n> Output of the Error:\n" + err)

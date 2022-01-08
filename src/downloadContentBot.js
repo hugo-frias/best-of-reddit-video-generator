@@ -49,7 +49,7 @@ async function download(url, ext) {
     return new Promise(async function (resolve) {
         const nomeVideo = (ext == ".gif") ? url.split("/")[3] : url.split("/")[3] + ext
         const pasta = (ext == ".mp4") ? "videos" : (ext == ".mp3") ? "audio" : null
-        const fileStream = fs.createWriteStream("./" + pasta + "/" + nomeVideo);
+        const fileStream = fs.createWriteStream("../" + pasta + "/" + nomeVideo);
         console.log("> [content-downloader] Downloading " + url + " into the folder " + pasta)
         await getDataAsync(url, fileStream).then(await closeFileStreamAsync(fileStream)).then(resolve())
     })

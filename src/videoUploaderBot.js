@@ -12,7 +12,7 @@ var readline = require('readline')
 // Faz o upload do video para o youtube
 var uploadYoutube = async function (day, postList, fileList, subReddit) {
     await oAuth()
-    const videoFilePath = 'finalVideo/final_' + day + '.mp4'
+    const videoFilePath = '../finalVideo/final_' + day + '.mp4'
     const videoFileSize = fs.statSync(videoFilePath).size
     const playlistIdValue = await getPlaylistBySubReddit(subReddit)
     console.log(playlistIdValue)
@@ -20,39 +20,44 @@ var uploadYoutube = async function (day, postList, fileList, subReddit) {
     const videoDescription = await descriptionGenerator(subReddit, postList, fileList.split('\n'))
     const videoTags = await tagsGenerator()
 
-    const requestParameters = {
-        part: 'snippet, status',
-        requestBody: {
-            snippet: {
-                title: videoTitle,
-                description: videoDescription,
-                tags: videoTags,
-                categoryId: 2
+
+    try {
+        const requestParameters = {
+            part: 'snippet, status',
+            requestBody: {
+                snippet: {
+                    title: videoTitle,
+                    description: videoDescription,
+                    tags: videoTags,
+                    categoryId: 2
+                },
+                status: {
+                    privacyStatus: 'public'
+                }
             },
-            status: {
-                privacyStatus: 'public'
+            media: {
+                body: fs.createReadStream(videoFilePath)
             }
-        },
-        media: {
-            body: fs.createReadStream(videoFilePath)
         }
+
+        // faz o print do progresso no upload (%) em tempo real
+        console.log('> [youtube-uploader] Starting to upload the video to YouTube')
+        const youtubeResponse = await youtube.videos.insert(requestParameters, {
+            onUploadProgress: onUploadProgress
+        })
+        function onUploadProgress(event) {
+            const progress = Math.round((event.bytesRead / videoFileSize) * 100)
+            console.log(`> [youtube-uploader] ${progress}% completed`)
+        }
+        console.log(`> [youtube-uploader] Video available at: https://youtu.be/${youtubeResponse.data.id}`)
+
+        // insere o video na playlist correspondente
+        await insertInPlaylist(playlistIdValue, youtubeResponse.data.id)
+
+        return youtubeResponse.data
+    } catch (err) {
+        console.log(err)
     }
-
-    // faz o print do progresso no upload (%) em tempo real
-    console.log('> [youtube-uploader] Starting to upload the video to YouTube')
-    const youtubeResponse = await youtube.videos.insert(requestParameters, {
-        onUploadProgress: onUploadProgress
-    })
-    function onUploadProgress(event) {
-        const progress = Math.round((event.bytesRead / videoFileSize) * 100)
-        console.log(`> [youtube-uploader] ${progress}% completed`)
-    }
-    console.log(`> [youtube-uploader] Video available at: https://youtu.be/${youtubeResponse.data.id}`)
-
-    // insere o video na playlist correspondente
-    await insertInPlaylist(playlistIdValue, youtubeResponse.data.id)
-
-    return youtubeResponse.data
 }
 
 
@@ -88,7 +93,7 @@ async function startWebServer() {
 
 // cria o cliente oAuth
 async function createOAuthClient() {
-    let credentials = JSON.parse(fs.readFileSync('dadosYoutube.json', 'utf-8'))
+    let credentials = JSON.parse(fs.readFileSync('../google-youtube.json', 'utf-8'))
 
     const OAuthClient = new OAuth2(
         credentials.web.client_id,
@@ -158,7 +163,7 @@ async function stopWebServer(webServer) {
 
 // gera a descrição do video baseado nos posts incluidos no mesmo, mencionando os seus autores, titulos de posts e URL's originais
 async function descriptionGenerator(subReddit, postList, filesList) {
-    var description = "#reddit #"+subReddit+" #compilation \n\nThis is an automated video made with posts from the subreddit "+subReddit+". \n\nIf you are the author of one of these videos and " +
+    var description = "#reddit #" + subReddit.split("/")[1] + " #compilation \n\nThis is an automated video made with posts from the subreddit " + subReddit + ". \n\nIf you are the author of one of these videos and " +
         'you want it removed, leave a comment in the comment section. \n\nAll the authors and posts: \n'
     try {
         for (let video of filesList) {
@@ -170,19 +175,11 @@ async function descriptionGenerator(subReddit, postList, filesList) {
         }
 
     } catch (err) {
+        console.log(err)
     }
     return description
 
 }
-
-// // gera o titulo do video baseado na quantidade de videos na playlist onde será introduzido
-// async function titleGenerator(playListIdValue) {
-//     var responseItems = await youtube.playlistItems.list({
-//         part: 'snippet',
-//         playlistId: playListIdValue
-//     })
-//     return responseItems.data.pageInfo.totalResults + 1
-// }
 
 // insere as tags no video
 async function tagsGenerator() {
@@ -190,15 +187,15 @@ async function tagsGenerator() {
     return tags.split(', ')
 }
 
-async function titleGenerator(){
-    const rl = readline.createInterface({
+async function titleGenerator() {
+    const r2 = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     })
 
     return await new Promise((resolve, reject) => {
-        rl.question("Insert the title for the video\n", ans => {
-            rl.close()
+        r2.question("Insert the title for the video\n", ans => {
+            r2.close()
             resolve(ans)
         })
     })
@@ -207,7 +204,7 @@ async function titleGenerator(){
 
 // insere o video numa playList
 async function insertInPlaylist(playListIdValue, videoIdValue) {
-    try{
+    try {
         var responseUpdate = await youtube.playlistItems.insert({
             part: 'snippet',
             resource: {
@@ -221,32 +218,32 @@ async function insertInPlaylist(playListIdValue, videoIdValue) {
             }
         })
         return responseUpdate
-    } catch(err){
+    } catch (err) {
         console.log(err)
     }
 }
 
-async function getPlaylistBySubReddit(subReddit){
-    playlistName = "Best of "+subReddit
+async function getPlaylistBySubReddit(subReddit) {
+    playlistName = "Best of " + subReddit
     var responsePlaylists = await youtube.playlists.list({
         part: 'snippet',
         mine: true
     })
-    for(let playlist of responsePlaylists.data.items){
-        if(playlist.snippet.title == playlistName){
+    for (let playlist of responsePlaylists.data.items) {
+        if (playlist.snippet.title == playlistName) {
             return playlist.id
         }
     }
     return createPlaylist(playlistName, subReddit)
 }
 
-async function createPlaylist(playlistName, subReddit){
+async function createPlaylist(playlistName, subReddit) {
     var newPlaylist = await youtube.playlists.insert({
         part: 'snippet, status',
-        resource:{
+        resource: {
             snippet: {
                 title: playlistName,
-                description: 'The best posts of the subReddit '+subReddit
+                description: 'The best posts of the subReddit ' + subReddit
             },
             status: {
                 privacyStatus: 'public'
