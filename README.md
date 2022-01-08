@@ -28,10 +28,16 @@ Este é um projeto feito em _JavaScript_ que, quando fornecido um _SubReddit_ e 
 </p>
 
 5. O programa então cria uma lista com todos os clipes finais editados, clipes esses que são posteriormente combinados e juntos num único video final.
-6. O programa vai pedir ao utilizador para fazer a autenticação na sua conta do _youtube_ de modo a fazer _upload_ do video final no canal selecionado. Vai pedir ao utilizador também para inserir o titulo do video, vai criar uma descrição com detalhes sobre os _posts_ originários do video (com os seus autores, titulos e _links_ para os próprios posts), vai aplicar certas _tags_ ao video e finalmente fazer o seu upload no youtube, sendo este video posteriormente adicionado a uma _playlist_ correspondente ao _SubReddit_ utilizado (criando uma _playlist_ caso esta ainda não exista)
 
 <p align="center">
   <img src="https://github.com/hugo-frias/best-of-reddit-video-generator/blob/main/readme%20images/tuto4.png" />
+</p>
+
+6. O programa vai pedir ao utilizador para fazer a autenticação na sua conta do _youtube_ de modo a fazer _upload_ do video final no canal selecionado. Vai pedir ao utilizador também para inserir o titulo do video, vai criar uma descrição com detalhes sobre os _posts_ originários do video (com os seus autores, titulos e _links_ para os próprios posts), vai aplicar certas _tags_ ao video e finalmente fazer o seu upload no youtube, sendo este video posteriormente adicionado a uma _playlist_ correspondente ao _SubReddit_ utilizado (criando uma _playlist_ caso esta ainda não exista)
+7. Por fim, é dada a escolha ao utilizador de apagar todos os ficheiros e clipes "intermédios", ficando apenas o video final.
+
+<p align="center">
+  <img src="https://github.com/hugo-frias/best-of-reddit-video-generator/blob/main/readme%20images/tuto5.png" />
 </p>
 
 # _FrameWorks_ e bibliotecas principais usadas
