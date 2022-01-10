@@ -1,16 +1,11 @@
 node_modules
 src/.env
 google-youtube.json
+media/finalVideos/*.mp4
 listaDeVideos.txt
 media/temporaryClips/audios/*.mp3
-!media/temporaryClips/audios/audioExample.mp3
 media/temporaryClips/videos/*.mp4
-!media/temporaryClips/videos/videoExample.mp4
 media/temporaryClips/videoAndAudio/*.mp4
-!media/temporaryClips/videoAndAudio/videoWithAudioExample.mp4
 media/temporaryClips/videosWithText/*.mp4
-!media/temporaryClips/videosWithText/videoWithTextExample.mp4
 media/temporaryClips/16by9videos/*.mp4
-!media/temporaryClips/16by9videos/16By9VideoExample.mp4
 media/temporaryClips/tempResolution/*.mp4
-!media/temporaryClips/tempResolution/tempResolutionExample.mp4
