@@ -1,8 +1,8 @@
 node_modules
 src/.env
 google-youtube.json
-media/finalVideos/*.mp4
 listaDeVideos.txt
+media/finalVideos/*.mp4
 media/temporaryClips/audios/*.mp3
 media/temporaryClips/videos/*.mp4
 media/temporaryClips/videoAndAudio/*.mp4
