@@ -3,15 +3,11 @@ const envFound = require('dotenv').config();
 var downloader = require('./downloadContentBot.js')
 var videoMaker = require('./videoMakerBot.js')
 var videoUploader = require('./videoUploaderBot.js')
-var dotenv = require('dotenv')
 var readline = require('readline')
 var exec = require('child_process').exec
 const { exit } = require('process')
 
-const videosWithAudioFolder = process.env.VIDEOSWITHAUDIOFOLDER
-const videosWithTextFolder = process.env.VIDEOSWITHTEXTFOLDER
-const rightResolutionFolder = process.env.RIGHTRESOLUTIONFOLDER
-const finalVideoFolder = process.env.FINALVIDEOFOLDER
+
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -27,7 +23,7 @@ async function start() {
     let date = new Date()
     const day = date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear()
 
-    const subReddit = await new Promise((resolve, reject) => {
+    const subReddit = await new Promise((resolve) => {
         rl.question("Choose the subReddit [r/subRedditName]\n", ans => {
             resolve(ans)
         })
@@ -35,13 +31,17 @@ async function start() {
 
     let timeframe = await new Promise((resolve, reject) => {
         rl.question("Choose the timeframe of the top posts [hour, day, week, month, year, all]\n", ans => {
-            rl.close()
-            resolve(ans)
+            if (ans != "hour" && ans != "day" && ans !== "week" && ans != "month" && ans != "year" && ans != "all") {
+                console.log("Invalid timeframe")
+                rl.close()
+                reject()
+                exit()
+            } else{
+                rl.close()
+                resolve(ans)
+            }
         })
     })
-    if (timeframe != "hour" && timeframe != "day" && timeframe !== "week" && timeframe != "month" && timeframe != "year" && timeframe != "all") {
-        exit()
-    }
 
     console.log("Top Posts of the " + timeframe + " in the subreddit " + subReddit + ":")
 
@@ -65,30 +65,30 @@ async function start() {
     //  Junta as componentes de video (.mp4) ás respetivas componentes de aúdio (.mp3) de todos os posts da postList
     for (var post of postList) {
         var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
-        await videoMaker.joinVideoAndAudio(post, videosWithAudioFolder, withAudioName)
+        await videoMaker.joinVideoAndAudio(post, withAudioName)
     }
 
     //  Verifica as resoluções dos clipes de video presentes nos posts da postList, corrigindo-os caso não sejam 16:9
     for (var post of postList) {
         var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
-        await videoMaker.checkResolution(withAudioName, videosWithAudioFolder, rightResolutionFolder)
+        await videoMaker.checkResolution(withAudioName)
     }
 
     // Adiciona o título do post ao seu clipe de video
     for (var post of postList) {
         var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
-        await videoMaker.addTextToVideo(post, withAudioName, videosWithTextFolder, rightResolutionFolder)
+        await videoMaker.addTextToVideo(post, withAudioName)
     }
 
 
     // Guarda num ficheiro .txt a localização e nomes dos ficheiros dos clipes a serem utilizados para o vídeo final
-    let fileList = await videoMaker.makeListFile(videosWithTextFolder)
+    let fileList = await videoMaker.makeListFile()
 
     /*
     Junta todos os clipes já editados (com as resoluções certas, com aúdio e video sincronizados e texto no ecrã) e
     cria o video final a ser publicado no youtube
     */
-    await videoMaker.videoMaker('final_' + date.getDate() + date.getMonth() + date.getFullYear() + '.mp4', finalVideoFolder)
+    await videoMaker.videoMaker('final_' + date.getDate() + date.getMonth() + date.getFullYear() + '.mp4')
 
     // Requesita as autorizações ao utilizador e faz o upload do vídeo para o youtube
 
@@ -108,7 +108,7 @@ async function cleanFolders() {
     })
     
 
-    const answer = await new Promise((resolve, reject) => {
+    const answer = await new Promise((resolve) => {
         rl3.resume()
         rl3.question("Do you want to delete all videos downloaded? (Y/N)\n", ans => {
             rl3.close()
@@ -119,7 +119,7 @@ async function cleanFolders() {
     if (answer === 'Y') {
         await deleteFiles()
     } else {
-        console.log("Aighty :)")
+        console.log("The videos were not deleted.")
     }
 
 }
@@ -129,8 +129,7 @@ async function deleteFiles() {
 
 
     return new Promise((resolve, reject) => {
-
-        exec('del /s /q ..\\audio\\ && del /s /q ..\\videos\\ && del /s /q ..\\videoAndAudio\\ && del /s /q ..\\videosWithText\\  && del /s /q ..\\tempResolution\\ && del /s /q ..\\16by9videos\\ && break>..\\listaDeVideos.txt', async function (err, stdout, stderr) {
+        exec('del /s /q ..\\media\\temporaryClips\\audios\\ && del /s /q ..\\media\\temporaryClips\\videos\\ && del /s /q ..\\media\\temporaryClips\\videoAndAudio\\ && del /s /q ..\\media\\temporaryClips\\videosWithText\\  && del /s /q ..\\media\\temporaryClips\\tempResolution\\ && del /s /q ..\\media\\temporaryClips\\16by9videos\\ && break>..\\..\\listaDeVideos.txt', async function (err, stdout, stderr) {
             if (err) {
                 console.log(err)
                 reject()

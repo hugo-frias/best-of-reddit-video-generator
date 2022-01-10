@@ -4,22 +4,25 @@ var express = require('express')
 var googleAux = require('googleapis')
 var fs = require('fs')
 
+const envFound = require('dotenv').config();
 const google = googleAux.google
 const OAuth2 = google.auth.OAuth2
 const youtube = google.youtube({ version: 'v3' })
-var readline = require('readline')
+const readline = require('readline')
+
+const googleYoutubeJSON = process.env.YOUTUBEJSON
+const finalVideoFolder = process.env.FINALVIDEOFOLDER
 
 // Faz o upload do video para o youtube
-var uploadYoutube = async function (day, postList, fileList, subReddit) {
+async function uploadYoutube(day, postList, fileList, subReddit) {
     await oAuth()
-    const videoFilePath = '../finalVideo/final_' + day + '.mp4'
+    const videoFilePath = finalVideoFolder + 'final_' + day + '.mp4'
     const videoFileSize = fs.statSync(videoFilePath).size
     const playlistIdValue = await getPlaylistBySubReddit(subReddit)
     console.log(playlistIdValue)
     const videoTitle = await titleGenerator()
     const videoDescription = await descriptionGenerator(subReddit, postList, fileList.split('\n'))
     const videoTags = await tagsGenerator()
-
 
     try {
         const requestParameters = {
@@ -60,8 +63,6 @@ var uploadYoutube = async function (day, postList, fileList, subReddit) {
     }
 }
 
-
-
 // gere o oAuth
 async function oAuth() {
 
@@ -70,18 +71,18 @@ async function oAuth() {
     requestUserConsent(OAuthClient)
     const authorizationToken = await waitForGoogleCallback(webServer)
     await requestGoogleForAccessTokens(OAuthClient, authorizationToken)
-    await setGlobalGoogleAuthentication(OAuthClient)
+    setGlobalGoogleAuthentication(OAuthClient)
     await stopWebServer(webServer)
 }
 
 // começa um servidor web
 async function startWebServer() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const port = 5000
         const app = express()
 
         const server = app.listen(port, () => {
-            console.log(`> [youtube-uploader] Listening on http://localhost:${port}`)
+            console.log('> [youtube-uploader] Listening on http://localhost:'+port)
 
             resolve({
                 app,
@@ -93,7 +94,7 @@ async function startWebServer() {
 
 // cria o cliente oAuth
 async function createOAuthClient() {
-    let credentials = JSON.parse(fs.readFileSync('../google-youtube.json', 'utf-8'))
+    let credentials = JSON.parse(fs.readFileSync(googleYoutubeJSON, 'utf-8'))
 
     const OAuthClient = new OAuth2(
         credentials.web.client_id,
@@ -111,17 +112,17 @@ function requestUserConsent(OAuthClient) {
         scope: ['https://www.googleapis.com/auth/youtube']
     })
 
-    console.log(`> [youtube-uploader] Please give your consent: ${consentUrl}`)
+    console.log('> [youtube-uploader] Please give your consent: '+consentUrl)
 }
 
 // aguarda pelo consimento do usuário
 async function waitForGoogleCallback(webServer) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         console.log('> [youtube-uploader] Waiting for user consent...')
 
         webServer.app.get('/oauth2callback', (req, res) => {
             const authCode = req.query.code
-            console.log(`> [youtube-uploader] Consent given: ${authCode}`)
+            console.log('> [youtube-uploader] Consent given')
 
             res.send('<h1>Thank you!</h1><p>Now close this tab.</p>')
             resolve(authCode)
@@ -154,7 +155,7 @@ function setGlobalGoogleAuthentication(OAuthClient) {
 
 // fecha o servidor web criado
 async function stopWebServer(webServer) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         webServer.server.close(() => {
             resolve()
         })
@@ -187,6 +188,7 @@ async function tagsGenerator() {
     return tags.split(', ')
 }
 
+// Pede o titulo do video ao utilizador
 async function titleGenerator() {
     const r2 = readline.createInterface({
         input: process.stdin,
@@ -223,6 +225,7 @@ async function insertInPlaylist(playListIdValue, videoIdValue) {
     }
 }
 
+// Obtem a playlist de acordo com o subreddit usado
 async function getPlaylistBySubReddit(subReddit) {
     playlistName = "Best of " + subReddit
     var responsePlaylists = await youtube.playlists.list({
@@ -237,6 +240,7 @@ async function getPlaylistBySubReddit(subReddit) {
     return createPlaylist(playlistName, subReddit)
 }
 
+// Cria uma playlist
 async function createPlaylist(playlistName, subReddit) {
     var newPlaylist = await youtube.playlists.insert({
         part: 'snippet, status',
@@ -255,5 +259,3 @@ async function createPlaylist(playlistName, subReddit) {
 }
 
 module.exports.uploadYoutube = uploadYoutube
-module.exports.insertInPlaylist = insertInPlaylist
-module.exports.oAuth = oAuth
