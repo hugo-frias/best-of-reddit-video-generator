@@ -74,6 +74,7 @@ async function checkResolution(videoName) {
                                 console.log("> [video-maker] Error moving the video " + post.videoName + "\n> Output of the Error:\n" + err)
                                 resolve()
                             }
+                            resolve()
                         })
                     }
                 }

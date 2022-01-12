@@ -145,5 +145,4 @@ async function deleteFiles() {
 
 }
 
-start()
 
