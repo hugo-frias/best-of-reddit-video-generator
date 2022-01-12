@@ -165,7 +165,7 @@ async function makeListFile() {
 */
 async function videoMaker(videoName) {
     return new Promise((resolve, reject) => {
-        exec('ffmpeg -safe 0 -f concat -i ../listaDeVideos.txt -c copy ' + finalVideoFolder + videoName, async function (err, stdout, stderr) {
+        exec('ffmpeg -safe 0 -f concat -i ../listaDeVideos.txt -c copy ' + finalVideoFolder + videoName, async function (err) {
             if (err) {
                 console.log("> [video-maker] Error creating final video "
                     + ".\n> Output of the Error:\n" + err)

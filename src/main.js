@@ -88,10 +88,9 @@ async function start() {
     Junta todos os clipes já editados (com as resoluções certas, com aúdio e video sincronizados e texto no ecrã) e
     cria o video final a ser publicado no youtube
     */
-    await videoMaker.videoMaker('final_' + date.getDate() + date.getMonth() + date.getFullYear() + '.mp4')
+    await videoMaker.videoMaker('final_' + date.getDate() + date.getMonth() + date.getFullYear() + '_' + subReddit.split('/')[1] + '.mp4')
 
     // Requesita as autorizações ao utilizador e faz o upload do vídeo para o youtube
-
     await videoUploader.uploadYoutube(day.split('/')[0] + day.split('/')[1] + day.split('/')[2], postList, fileList, subReddit)
 
     // Pergunta ao utilizador se deseja limpar os ficheiros gerados ao longo do script (excepto o video final)
@@ -126,23 +125,18 @@ async function cleanFolders() {
 
 // Apaga os ficheiros transferidos anteriormente e limpa a lista de ficheiros gerada
 async function deleteFiles() {
-
-
     return new Promise((resolve, reject) => {
         exec('del /s /q ..\\media\\temporaryClips\\audios\\ && del /s /q ..\\media\\temporaryClips\\videos\\ && del /s /q ..\\media\\temporaryClips\\videoAndAudio\\ && del /s /q ..\\media\\temporaryClips\\videosWithText\\  && del /s /q ..\\media\\temporaryClips\\tempResolution\\ && del /s /q ..\\media\\temporaryClips\\16by9videos\\ && break>..\\..\\listaDeVideos.txt', async function (err, stdout, stderr) {
             if (err) {
                 console.log(err)
                 reject()
                 return;
-            }
-
+            }            
             // sdout e stderr buffered
-            console.log(`stdout: ${stdout}`);
-            console.log(`stderr: ${stderr}`);
+            console.log('stdout: ' + stdout);
             resolve()
         });
     })
-
 }
 
-
+start()
