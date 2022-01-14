@@ -14,14 +14,14 @@ const googleYoutubeJSON = process.env.YOUTUBEJSON
 const finalVideoFolder = process.env.FINALVIDEOFOLDER
 
 // Faz o upload do video para o youtube
-async function uploadYoutube(day, postList, fileList, subReddit) {
+async function uploadYoutube(finalVideoName, postList, fileList, subReddit) {
     await oAuth()
-    const videoFilePath = finalVideoFolder + 'final_' + day + '.mp4'
+    const videoFilePath = finalVideoFolder + finalVideoName
     const videoFileSize = fs.statSync(videoFilePath).size
     const playlistIdValue = await getPlaylistBySubReddit(subReddit)
     console.log(playlistIdValue)
-    const videoTitle = await titleGenerator()
     const videoDescription = await descriptionGenerator(subReddit, postList, fileList.split('\n'))
+    const videoTitle = await titleGenerator()
     const videoTags = await tagsGenerator()
 
     try {
@@ -169,12 +169,14 @@ async function descriptionGenerator(subReddit, postList, filesList) {
     try {
         for (let video of filesList) {
             for (let post of postList) {
-                if (video.split(' ')[1].split('with')[0].split('/')[1] + '.mp4' === post.videoName) {
-                    description += post.title + ' by ' + post.user + ' \nlink: ' + post.url + '\n\n'
+                if(video != ''){
+                    if (video.split('/')[3].split('with')[0] + '.mp4' === post.videoName) {
+                        description += post.title + ' by ' + post.user + ' \nlink: ' + post.url + '\n\n'
+                    }
+
                 }
             }
         }
-
     } catch (err) {
         console.log(err)
     }

@@ -21,7 +21,6 @@ async function start() {
 
     // Cria uma nova instância de data que irá ser posteriormente utilizada na nomenclatura de ficheiros
     let date = new Date()
-    const day = date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear()
 
     const subReddit = await new Promise((resolve) => {
         rl.question("Choose the subReddit [r/subRedditName]\n", ans => {
@@ -84,14 +83,15 @@ async function start() {
     // Guarda num ficheiro .txt a localização e nomes dos ficheiros dos clipes a serem utilizados para o vídeo final
     let fileList = await videoMaker.makeListFile()
 
+    let finalVideoName = 'final_' + date.getDate() + date.getMonth() + date.getFullYear() + '_' + subReddit.split('/')[1] + '.mp4'
     /*
     Junta todos os clipes já editados (com as resoluções certas, com aúdio e video sincronizados e texto no ecrã) e
     cria o video final a ser publicado no youtube
     */
-    await videoMaker.videoMaker('final_' + date.getDate() + date.getMonth() + date.getFullYear() + '_' + subReddit.split('/')[1] + '.mp4')
+    await videoMaker.videoMaker(finalVideoName)
 
     // Requesita as autorizações ao utilizador e faz o upload do vídeo para o youtube
-    await videoUploader.uploadYoutube(day.split('/')[0] + day.split('/')[1] + day.split('/')[2], postList, fileList, subReddit)
+    await videoUploader.uploadYoutube(finalVideoName, postList, fileList, subReddit)
 
     // Pergunta ao utilizador se deseja limpar os ficheiros gerados ao longo do script (excepto o video final)
     await cleanFolders()
@@ -115,7 +115,7 @@ async function cleanFolders() {
         })
     })
 
-    if (answer === 'Y') {
+    if (answer.localeCompare('y', undefined, { sensitivity: 'base' })) {
         await deleteFiles()
     } else {
         console.log("The videos were not deleted.")
