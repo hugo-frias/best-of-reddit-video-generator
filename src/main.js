@@ -114,8 +114,7 @@ async function cleanFolders() {
             resolve(ans)
         })
     })
-
-    if (answer.localeCompare('y', undefined, { sensitivity: 'base' })) {
+    if (answer.localeCompare('y', undefined, { sensitivity: 'accent' }) == 0) {
         await deleteFiles()
     } else {
         console.log("The videos were not deleted.")
@@ -138,5 +137,6 @@ async function deleteFiles() {
         });
     })
 }
+
 
 start()
