@@ -8,6 +8,12 @@ var exec = require('child_process').exec
 const { exit } = require('process')
 
 
+const videosWithTextFolder = process.env.VIDEOSWITHTEXTFOLDER
+const finalVideosFolder = process.env.FINALVIDEOFOLDER
+const preOutroFolder = process.env.PREOUTROFOLDER
+
+const preOutroFolderCmd = process.env.PREOUTROFOLDERCMD
+
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -54,30 +60,30 @@ async function start() {
 
     console.log(postList)
 
-    // Faz o download do conteúdo dos posts recolhidos anteriormente
-    if (postList.length < 30) {
-        console.log("Starting the Downloads")
-        await downloader.downloadAllFiles(postList)
-        console.log("All files Downloaded")
-    }
+    // // Faz o download do conteúdo dos posts recolhidos anteriormente
+    // if (postList.length < 30) {
+    //     console.log("Starting the Downloads")
+    //     await downloader.downloadAllFiles(postList)
+    //     console.log("All files Downloaded")
+    // }
 
-    //  Junta as componentes de video (.mp4) ás respetivas componentes de aúdio (.mp3) de todos os posts da postList
-    for (var post of postList) {
-        var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
-        await videoMaker.joinVideoAndAudio(post, withAudioName)
-    }
+    // //  Junta as componentes de video (.mp4) ás respetivas componentes de aúdio (.mp3) de todos os posts da postList
+    // for (var post of postList) {
+    //     var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
+    //     await videoMaker.joinVideoAndAudio(post, withAudioName)
+    // }
 
-    //  Verifica as resoluções dos clipes de video presentes nos posts da postList, corrigindo-os caso não sejam 16:9
-    for (var post of postList) {
-        var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
-        await videoMaker.checkResolution(withAudioName)
-    }
+    // //  Verifica as resoluções dos clipes de video presentes nos posts da postList, corrigindo-os caso não sejam 16:9
+    // for (var post of postList) {
+    //     var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
+    //     await videoMaker.checkResolution(withAudioName)
+    // }
 
-    // Adiciona o título do post ao seu clipe de video
-    for (var post of postList) {
-        var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
-        await videoMaker.addTextToVideo(post, withAudioName)
-    }
+    // // Adiciona o título do post ao seu clipe de video
+    // for (var post of postList) {
+    //     var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
+    //     await videoMaker.addTextToVideo(post, withAudioName)
+    // }
 
 
     // Guarda num ficheiro .txt a localização e nomes dos ficheiros dos clipes a serem utilizados para o vídeo final
@@ -138,5 +144,113 @@ async function deleteFiles() {
     })
 }
 
+async function deleteFile(file){
+    return new Promise((resolve, reject) => {
+        exec('del '+file, async function (err, stdout, stderr) {
+            if (err) {
+                console.log(err)
+                reject()
+                return;
+            }            
+            // sdout e stderr buffered
+            console.log('Ficheiro temporário apagado');
+            resolve()
+        });
+    })
+}
 
-start()
+
+async function testOutro(){
+
+    // Cria uma nova instância de data que irá ser posteriormente utilizada na nomenclatura de ficheiros
+    let date = new Date()
+
+    let postList = [];
+
+    const subReddit = await new Promise((resolve) => {
+        rl.question("Choose the subReddit [r/subRedditName]\n", ans => {
+            resolve(ans)
+        })
+    })
+
+    let timeframe = await new Promise((resolve, reject) => {
+        rl.question("Choose the timeframe of the top posts [hour, day, week, month, year, all]\n", ans => {
+            if (ans != "hour" && ans != "day" && ans !== "week" && ans != "month" && ans != "year" && ans != "all") {
+                console.log("Invalid timeframe")
+                rl.close()
+                reject()
+                exit()
+            } else{
+                rl.close()
+                resolve(ans)
+            }
+        })
+    })
+
+    postList = await downloader.getData(subReddit, timeframe)
+    postList.sort(function (a, b) {
+        if (a.videoName < b.videoName) { return -1; }
+        if (a.videoName > b.videoName) { return 1; }
+        return 0;
+    })
+
+
+
+    console.log(postList)
+
+    // Faz o download do conteúdo dos posts recolhidos anteriormente
+    if (postList.length < 30) {
+        console.log("Starting the Downloads")
+        await downloader.downloadAllFiles(postList)
+        console.log("All files Downloaded")
+    }
+
+    //  Junta as componentes de video (.mp4) ás respetivas componentes de aúdio (.mp3) de todos os posts da postList
+    for (var post of postList) {
+        var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
+        let isCorrupted = await videoMaker.joinVideoAndAudio(post, withAudioName)
+        if(isCorrupted){
+        console.log(postList.length)
+        postList.splice(postList.indexOf(post),1)
+        console.log(postList.length)
+        }
+    }
+
+
+    //  Verifica as resoluções dos clipes de video presentes nos posts da postList, corrigindo-os caso não sejam 16:9
+    for (var post of postList) {
+        var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
+        await videoMaker.checkResolution(withAudioName)
+    }
+
+    // Adiciona o título do post ao seu clipe de video
+    for (var post of postList) {
+        var withAudioName = post.videoName.split('.')[0] + 'withAudio.mp4'
+        await videoMaker.addTextToVideo(post, withAudioName)
+    }
+
+
+    // Guarda num ficheiro .txt a localização e nomes dos ficheiros dos clipes a serem utilizados para o vídeo final
+    let fileList = await videoMaker.makeListFile(videosWithTextFolder)
+
+    let videoWithoutOutro = 'preOutro_' + date.getDate() + date.getMonth() + date.getFullYear() + '_' + subReddit.split('/')[1]
+    /*
+    Junta todos os clipes já editados (com as resoluções certas, com aúdio e video sincronizados e texto no ecrã) e
+    cria o video final a ser publicado no youtube
+    */
+    await videoMaker.videoMaker(preOutroFolder + videoWithoutOutro+".mp4")
+    await videoMaker.convertVideo(preOutroFolder + videoWithoutOutro+".mp4", preOutroFolder + videoWithoutOutro+".MTS")
+    await deleteFile(preOutroFolderCmd + videoWithoutOutro+".mp4")
+
+
+    let fileListOutro = await videoMaker.makeListFile(preOutroFolder)
+    let finalVideo = 'final_'+ date.getDate() + date.getMonth() + date.getFullYear() + '_' + subReddit.split('/')[1]
+    await videoMaker.videoMaker(preOutroFolder + finalVideo+".MTS")
+    await videoMaker.convertVideo( preOutroFolder + finalVideo+".MTS", finalVideosFolder+finalVideo+".mp4")
+    await deleteFile(preOutroFolderCmd + videoWithoutOutro+".MTS")
+    await deleteFile(preOutroFolderCmd + finalVideo+".MTS")
+}
+
+//teste()
+testOutro()
+//start()

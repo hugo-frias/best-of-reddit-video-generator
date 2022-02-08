@@ -41,6 +41,34 @@ async function getData(subReddit, timeFrame) {
     return postList
 }
 
+async function getOutro(subReddit){
+    let outro = {}
+    let data = await fetch(redditUrl + subReddit + "/.json").then(response => response.json())
+    for (let post of data.data.children) {
+            outro.title = post.data.title
+            outro.user = post.data.author
+            outro.url = redditUrl + post.data.permalink
+            if (post.data.secure_media != undefined) {
+                outro.video = (post.data.secure_media.reddit_video.fallback_url).split('?')[0]
+                outro.videoName = outro.video.split("/")[3] + ".mp4"
+                outro.audio = (post.data.secure_media.reddit_video.fallback_url).split('_')[0] + '_audio.mp4'
+                outro.audioName = outro.video.split("/")[3] + ".mp3"
+                outro.duration = post.data.secure_media.reddit_video.duration
+            }  
+    }
+    console.log(outro)
+    return outro
+}
+
+async function downloadOutro(url){
+    return new Promise(async function(resolve){
+        const pasta = "videosWithText"
+        const fileStream = fs.createWriteStream(temporaryClipsFolder + pasta + "/outro.mp4")
+        console.log("> [content-downloader] Downloading the outro")
+        await getDataAsync(url, fileStream).then(await closeFileStreamAsync(fileStream)).then(resolve())
+    })
+}
+
 // Faz o download de todos os ficheiros presentes na lista passada por parâmetro
 async function downloadAllFiles (postList) {
     for (var post of postList) {
@@ -60,8 +88,9 @@ async function download(url, ext) {
         console.log("> [content-downloader] Downloading " + url + " into the folder " + pasta)
         await getDataAsync(url, fileStream).then(await closeFileStreamAsync(fileStream)).then(resolve())
     })
-
 }
+
+
 
 // Faz o download do ficheiro com recurso ao fileStream e usando o URL do video
 async function getDataAsync(url, fileStream) {
@@ -88,5 +117,7 @@ async function closeFileStreamAsync(fileStream) {
 
 module.exports = {
     getData: getData,
-    downloadAllFiles: downloadAllFiles
+    downloadAllFiles: downloadAllFiles,
+    getOutro: getOutro,
+    download: download
 }

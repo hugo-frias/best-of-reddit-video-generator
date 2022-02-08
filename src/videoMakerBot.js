@@ -6,6 +6,7 @@ const envFound = require('dotenv').config();
 const videosWithAudioFolder = process.env.VIDEOSWITHAUDIOFOLDER
 const videosWithTextFolder = process.env.VIDEOSWITHTEXTFOLDER
 const videosWithTextFolderForList = process.env.VIDEOSWITHTEXTFORLISTFOLDER
+const preOutroFolder = process.env.PREOUTROFOLDER
 const rightResolutionFolder = process.env.RIGHTRESOLUTIONFOLDER
 const videosFolder = process.env.VIDEOSFOLDER
 const audiosFolder = process.env.AUDIOSFOLDER
@@ -14,6 +15,8 @@ const temporaryResolutionFolder = process.env.TEMPORARYRESOLUTIONFOLDER
 const videosFolderCmd = process.env.VIDEOSFOLDERCMD
 const videosWithAudioFolderCmd = process.env.VIDEOSWITHAUDIOFOLDERCMD
 const rightResolutionFolderCMD = process.env.RIGHTRESOLUTIONFOLDERCMD
+const videosWithTextFolderCmd = process.env.VIDEOSWITHTEXTFOLDERCMD
+const preOutroFolderCMD = process.env.PREOUTROFOLDERCMD
 
 const listaDeVideos = process.env.LISTADEVIDEOS
 const finalVideoFolder = process.env.FINALVIDEOFOLDER
@@ -28,19 +31,21 @@ async function joinVideoAndAudio(post, withAudioName) {
                     console.log("> [video-maker] Error joining audio and video for " + post.videoName)
                     // "\n> Output of the Error:\n" + err)
 
-                    console.log("> [video-maker] Trying to move video without the audio")
-                    exec('copy ' + videosFolderCmd + post.videoName + ' ' + videosWithAudioFolderCmd + withAudioName, (err, stdout, stderr) => {
-                        if (err) {
-                            console.log("> [video-maker] Error moving video without audio\n Output of the error:\n" + err)
-                        } else {
-                            console.log("> [video-maker] Moved video without audio")
-                        }
-                    })
+                    // console.log("> [video-maker] Trying to move video without the audio")
+                    // exec('copy ' + videosFolderCmd + post.videoName + ' ' + videosWithAudioFolderCmd + withAudioName, (err, stdout, stderr) => {
+                    //     if (err) {
+                    //         console.log("> [video-maker] Error moving video without audio\n Output of the error:\n" + err)
+                    //     } else {
+                    //         console.log("> [video-maker] Moved video without audio")
+                    //     }
+                    // })
+                    // resolve()
                     resolve()
-                    return;
+                    return true;
                 } else {
                     console.log("> [video-maker] Joined video and audio for " + post.videoName)
                     resolve()
+                    return false
                 }
             })
         } catch (err) {
@@ -137,14 +142,14 @@ async function addTextToVideo(post, video) {
 }
 
 //  Guarda num ficheiro .txt a localização e nomes dos ficheiros dos clipes a serem utilizados para o vídeo final
-async function makeListFile() {
+async function makeListFile(path) {
     var data = '';
     await new Promise((resolve) => {
         try {
             console.log("> [video-maker] Creating file list.")
-            fs.readdir(videosWithTextFolder, (err, files) => {
+            fs.readdir(path, (err, files) => {
                 files.forEach(file => {
-                    data += 'file ' + videosWithTextFolderForList +  file + "\n";
+                    data += 'file ' + path.split("../")[1] + file + "\n";
                 })
                 fs.writeFile(listaDeVideos, data, function (err) {
                     if (err) return console.log(err);
@@ -165,7 +170,7 @@ async function makeListFile() {
 */
 async function videoMaker(videoName) {
     return new Promise((resolve, reject) => {
-        exec('ffmpeg -safe 0 -f concat -i ../listaDeVideos.txt -c copy ' + finalVideoFolder + videoName, async function (err) {
+        exec('ffmpeg -safe 0 -f concat -i ../listaDeVideos.txt -c copy ' + videoName, async function (err) {
             if (err) {
                 console.log("> [video-maker] Error creating final video "
                     + ".\n> Output of the Error:\n" + err)
@@ -178,7 +183,34 @@ async function videoMaker(videoName) {
         });
     })
 }
+async function convertVideo(videoToConvert, videoConverted) {
+    return new Promise((resolve, reject) => {
+        console.log("> [video-maker] Changing video format")
+        exec('ffmpeg -i '+ videoToConvert+' '+ videoConverted, async function (err) {
+            if (err) {
+                console.log("> [video-maker] Error changing format of the video "
+                    + ".\n> Output of the Error:\n" + err)
+                reject()
+                return;
+            } else {
+                console.log("> [video-maker] Video format changed")
+                resolve()
+            }
+        });
+    })
+}
 
+async function moveOutro(outroName){
+    return new Promise((resolve, reject) => {
+        exec('move ' + videosWithAudioFolderCmd + outroName + " " + videosWithTextFolderCmd, (err) => {
+            if (err) {
+                console.log("> [video-maker] Error moving the video " + outroName + "\n> Output of the Error:\n" + err)
+                resolve()
+            }
+            resolve()
+        })
+    })
+}
 
 
 
@@ -187,5 +219,7 @@ module.exports = {
     checkResolution: checkResolution,
     addTextToVideo: addTextToVideo,
     makeListFile: makeListFile,
-    videoMaker: videoMaker
+    videoMaker: videoMaker,
+    moveOutro: moveOutro,
+    convertVideo: convertVideo
 }
